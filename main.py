@@ -11,12 +11,18 @@ def findpost(id):
         if post["id"] == id:
             return {"post": post}
 
+def find_indice_post(id):
+        for i, post in enumerate(posts_stack):
+            if post["id"] == id:
+                return i
+        return None
+
 class  Post(BaseModel):
     id: int
     title:str
     content:str
     published:bool =True
-    rating:Optional[int]=None
+    rating:Optional[float]=None
 
 
 posts_stack=[
@@ -24,13 +30,14 @@ posts_stack=[
         "title": "dz",
         "content": "setif",
         "published": True,
-        "rating": 5},
+        "rating": 4.5
+        },
         {
         "id": 2,
         "title": "dz",
         "content": "djelfa",
         "published": True,
-        "rating": 5
+        "rating": 3.75
         },
         {
         "id": 3,
@@ -44,7 +51,14 @@ posts_stack=[
         "title": "dz",
         "content": "adrare",
         "published": False,
-        "rating": 5
+        "rating": 2.5
+        },
+        {
+        "id": 5,
+        "title": "dz",
+        "content": "laghout",
+        "published": False,
+        "rating": 3.5
         }
 ]
 
@@ -91,3 +105,25 @@ def get_post_by_id(id:int,response:Response):
     }
     return context
 
+@app.delete('/delete/{id}',status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id : int):
+    find_it=find_indice_post(id)
+    if  find_it is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        detail=f'the post with this id: {id} was not found')
+    posts_stack.pop(find_it)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+
+@app.put("/update/{id}")
+def update_post(id:int,post:Post):
+    index=find_indice_post(id)
+    if  index is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        detail=f'the post with this id: {id} was not found')
+    
+    post_dict=post.dict()
+    posts_stack[index]=post_dict
+    return {"detail":post}
