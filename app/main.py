@@ -1,29 +1,36 @@
 import time
 from typing import Optional
-from fastapi import FastAPI,Response,status,HTTPException
+from fastapi import FastAPI,Response,status,HTTPException,Depends
 from fastapi.params import Body
 from pydantic import BaseModel, Field
 import psycopg2
 from psycopg2.extras import RealDictCursor
- 
+from .database import engine,SessionLocal,get_db
+from . import model
+from sqlalchemy.orm import session
+
 app = FastAPI()
 
-while True:
 
-    try:
+model.Base.metadata.create_all(bind=engine)
+
+
+# while True:
+
+#     try:
         
-        # Connect to your postgres DB
-        conn =psycopg2.connect(host='localhost',dbname='fastapi' ,user="postgres" ,password="123"
-            ,cursor_factory=RealDictCursor)
-        # Open a cursor to perform database operations
-        cur = conn.cursor()
-        print("seccsfull connection")
-        break
+#         # Connect to your postgres DB
+#         conn =psycopg2.connect(host='localhost',dbname='fastapi' ,user="postgres" ,password="123"
+#             ,cursor_factory=RealDictCursor)
+#         # Open a cursor to perform database operations
+#         cur = conn.cursor()
+#         print("seccsfull connection")
+#         break
 
-    except Exception as error:
-        print("faild to connect")
-        print(error)
-        time.sleep(2)
+#     except Exception as error:
+#         print("faild to connect")
+#         print(error)
+#         time.sleep(2)
 
 
 
@@ -42,6 +49,16 @@ class  Post(BaseModel):
     title:str
     content:str
     
+
+
+
+@app.get("/testdatabase")
+def testdatabase(db:session=Depends(get_db)):
+  
+    return {"data":"Good Connction"}
+
+
+
 
 
 
