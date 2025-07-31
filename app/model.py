@@ -10,4 +10,4 @@ class Post(Base):
     content=Column(String,nullable=False)
     published=Column(Boolean,nullable=True,server_default=text("false"))
     created_at=Column(TIMESTAMP,nullable=True,server_default=text("now()"))
-    updated_at=Column(TIMESTAMP,nullable=False,onupdate=datetime.utcnow)
+    # updated_at=Column(TIMESTAMP,nullable=False,onupdate=datetime.utcnow)
