@@ -1,28 +1,13 @@
-import time
-from typing import Optional
 from fastapi import FastAPI,Response,status,HTTPException,Depends
-from fastapi.params import Body
-from pydantic import BaseModel, Field
-from .database import engine,SessionLocal,get_db
+from .database import engine,get_db
 from . import model
 from sqlalchemy.orm import Session
+from . import schemas
 
 app = FastAPI()
 
 
 model.Base.metadata.create_all(bind=engine)
-
-
-class  Post(BaseModel):
-    title:str
-    content:str
-    
-
-
-
-
-
-
 
 
 @app.get("/")
@@ -32,16 +17,16 @@ async def run_tasks():
 
 
 
-@app.get('/posts')
-def get_post(db:Session=Depends(get_db)):
+@app.get('/posts',response_model=list[schemas.PostResponse])
+def get_all_posts(db:Session=Depends(get_db)):
     
     posts=db.query(model.Post).all()
 
     return posts
 
 
-@app.post('/posts',status_code=status.HTTP_201_CREATED)
-def creat(post:Post,db:Session=Depends(get_db)):
+@app.post('/posts',status_code=status.HTTP_201_CREATED,response_model=schemas.PostResponse)
+def creat(post:schemas.PostCreate,db:Session=Depends(get_db)):
     creat_item=model.Post(**post.dict())
     db.add(creat_item)
     db.commit()
@@ -51,16 +36,15 @@ def creat(post:Post,db:Session=Depends(get_db)):
 
 
 
-@app.get("/post/lates")
-def lates_post(db:Session=Depends(get_db)):
-    last_post=db.query(model.Post).order_by(model.Post.created_at.desc()).limit(1).all()
+@app.get("/post/latest",response_model=schemas.PostResponse)
+def latest_post(db:Session=Depends(get_db)):
+    last_post=db.query(model.Post).order_by(model.Post.created_at.desc()).first()
     print(last_post)
-    # post=posts_stack[len(posts_stack)-1]
     return last_post
 
 
-@app.get('/post/{id}')
-def get_post_by_id(id:int,response:Response,db:Session=Depends(get_db)):
+@app.get('/post/{id}',response_model=schemas.PostResponse)
+def get_post_by_id(id:int,db:Session=Depends(get_db)):
     get_post=db.query(model.Post).filter(model.Post.id==id).first()
 
     if not get_post:
@@ -70,7 +54,7 @@ def get_post_by_id(id:int,response:Response,db:Session=Depends(get_db)):
    
     return get_post
 
-@app.delete('/delete/{id}',status_code=status.HTTP_204_NO_CONTENT)
+@app.delete('/posts/{id}',status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id : int,db:Session=Depends(get_db)):
     deleted_post=db.query(model.Post).filter(model.Post.id==id).first()
     
@@ -83,8 +67,8 @@ def delete_post(id : int,db:Session=Depends(get_db)):
 
 
 
-@app.put("/update/{id}")
-def update_post(id:int,post:Post,db:Session=Depends(get_db)):
+@app.put("/posts/{id}",response_model=schemas.PostResponse)
+def update_post(id:int,post:schemas.PostUpdate,db:Session=Depends(get_db)):
     post_query=db.query(model.Post).filter(model.Post.id==id)
     index=post_query.first()
 
@@ -94,4 +78,18 @@ def update_post(id:int,post:Post,db:Session=Depends(get_db)):
     
     post_query.update(post.dict(),synchronize_session=False)
     db.commit()
-    return {"message": "Post updated successfully", "post": post_query.first()}
+    return  post_query.first()
+
+@app.get('/users',response_model=list[schemas.UserResponse])
+def get_all_users(db:Session=Depends(get_db)):
+    users=db.query(model.User).all()
+    return users
+
+@app.post('/users',status_code=status.HTTP_201_CREATED,response_model=schemas.UserResponse) 
+def create_user(user:schemas.UserCreate,db:Session=Depends(get_db)):
+    new_user=model.User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return new_user
